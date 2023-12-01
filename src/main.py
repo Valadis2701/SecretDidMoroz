@@ -2,11 +2,14 @@ import json
 import random
 import telebot
 import os
+from typing import List
+
 
 
 # Отримання значень токена бота та ID адміністратора з змінних середовища
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_ID = ADMIN_ID = os.getenv('ADMIN_ID')
+
 
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -87,21 +90,24 @@ def start_santa(message):
 
     user_profiles = load_user_profiles()
 
-    if len(user_profiles) < 2 or len(user_profiles) % 2 != 0:
-        bot.send_message(telegram_id, "Недостатньо зареєстрованих користувачів або кількість користувачів не є парною.")
+    if len(user_profiles) < 2:
+        bot.send_message(telegram_id, "Недостатньо зареєстрованих користувачів.")
     else:
-        bot.send_message(telegram_id, "Запускаємо процес підбору пар...")
+        bot.send_message(telegram_id, "Запускаємо процес вибору подарунків...")
 
         user_ids = list(user_profiles.keys())
         random.shuffle(user_ids)
-        pairs = list(zip(user_ids[::2], user_ids[1::2]))
+        send_gifts(user_ids, user_profiles)
 
-        for pair in pairs:
-            user1_id, user2_id = pair
-            user1_name = user_profiles[user1_id]["name"]
-            user2_name = user_profiles[user2_id]["name"]
+def send_gifts(user_ids: List[str], user_profiles: dict):
+    n = len(user_ids)
+    for i in range(n):
+        sender_id = user_ids[i]
+        receiver_id = user_ids[(i + 1) % n]  # Визначаємо отримувача
 
-            bot.send_message(user1_id, f"Ви таємний Дід Мороз для: {user2_name}\nАнкета: {user_profiles[user2_id]['profile']}")
-            bot.send_message(user2_id, f"Ви таємний Дід Мороз для: {user1_name}\nАнкета: {user_profiles[user1_id]['profile']}")
+        sender_name = user_profiles[sender_id]["name"]
+        receiver_name = user_profiles[receiver_id]["name"]
+
+        bot.send_message(sender_id, f"Ви таємний Дід Мороз для: {receiver_name}\nАнкета: {user_profiles[receiver_id]['profile']}")
 
 bot.polling(none_stop=True)
